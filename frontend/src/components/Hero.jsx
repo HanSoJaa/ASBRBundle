@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import bgvideo1 from '../assets/bgvideo1.mp4';
 
 function ShoeModel() {
-  const gltf = useGLTF('/Nike Shoe V2.glb');
+  const gltf = useGLTF('/model.glb');
   return <primitive object={gltf.scene} scale={12.5} position={[0, -0.7, 0]} />;
 }
 
