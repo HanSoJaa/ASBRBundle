@@ -1,0 +1,20 @@
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/ecommerce
+
+# JWT Secret
+JWT_SECRET=your-jwt-secret-key-here
+
+# Email Configuration (Gmail)
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Frontend URL (for email links)
+FRONTEND_URL=http://localhost:5173
+
+# Cloudinary Configuration (if using)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Stripe Configuration (if using)
+STRIPE_SECRET_KEY=your-stripe-secret-key 
