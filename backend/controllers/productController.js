@@ -16,6 +16,20 @@ const generateProductID = async () => {
     return `PRO${nextNumber.toString().padStart(4, "0")}`;
 }
 
+// Helper for uploading buffer to Cloudinary
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
+
 // function for add product
 const addProduct = async (req, res) => {
     try {
@@ -67,10 +81,11 @@ const addProduct = async (req, res) => {
             });
         }
 
+        // Upload images to Cloudinary using buffer
         let imagesUrl = await Promise.all(
             images.map(async (item) => {
                 try {
-                    let result = await cloudinary.uploader.upload(item.path, { resource_type: 'image' });
+                    let result = await uploadToCloudinary(item.buffer);
                     return result.secure_url;
                 } catch (error) {
                     console.error('Error uploading image to cloudinary:', error);

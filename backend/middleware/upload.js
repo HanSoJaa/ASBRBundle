@@ -1,20 +1,9 @@
 import multer from 'multer';
-import path from 'path';
 
-// Configure storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // Make sure this directory exists
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Use memory storage for serverless (Vercel)
+const storage = multer.memoryStorage();
 
-// File filter
 const fileFilter = (req, file, cb) => {
-    // Accept images only
     if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/)) {
         req.fileValidationError = 'Only image files are allowed!';
         return cb(new Error('Only image files are allowed!'), false);
@@ -22,7 +11,6 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
 };
 
-// Configure upload
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
