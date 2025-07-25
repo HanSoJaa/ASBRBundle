@@ -109,7 +109,8 @@ const addProduct = async (req, res) => {
         console.error("Add Product Error:", error);
         res.status(500).json({ 
             success: false, 
-            message: "Error adding product. Please try again later."
+            message: error.message || "Error adding product. Please try again later.",
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }
