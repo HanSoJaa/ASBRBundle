@@ -9,7 +9,7 @@ const Navbar = () => {
     const navigate = useNavigate();
 
     const handleAdminClick = () => {
-        window.open('http://localhost:5173', '_blank');
+        window.open('https://asbr-bundle-admin.vercel.app/', '_blank');
     };
 
     const handleLogin = () => {
