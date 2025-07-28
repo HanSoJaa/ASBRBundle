@@ -5,7 +5,6 @@ import { backendUrl } from '../App';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 
-
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -16,6 +15,15 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Password validation rules
+  const passwordRules = {
+    hasUpperCase: /[A-Z]/.test(formData.password),
+    hasLowerCase: /[a-z]/.test(formData.password),
+    hasNumbers: /\d/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
+    isLongEnough: formData.password.length >= 6
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -31,6 +39,14 @@ const Register = () => {
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    const allRulesMet = Object.values(passwordRules).every(rule => rule);
+    if (!allRulesMet) {
+      toast.error('Password does not meet all requirements');
       setLoading(false);
       return;
     }
@@ -144,6 +160,29 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
               />
+              {/* Password Rules */}
+              <div className="mt-2 space-y-1">
+                <div className={`text-xs flex items-center gap-2 ${passwordRules.hasUpperCase ? 'text-green-500' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${passwordRules.hasUpperCase ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  One Capital Letter
+                </div>
+                <div className={`text-xs flex items-center gap-2 ${passwordRules.hasLowerCase ? 'text-green-500' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${passwordRules.hasLowerCase ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  One Lowercase Letter
+                </div>
+                <div className={`text-xs flex items-center gap-2 ${passwordRules.hasNumbers ? 'text-green-500' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${passwordRules.hasNumbers ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  One Number
+                </div>
+                <div className={`text-xs flex items-center gap-2 ${passwordRules.hasSpecialChar ? 'text-green-500' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${passwordRules.hasSpecialChar ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  One Special Character
+                </div>
+                <div className={`text-xs flex items-center gap-2 ${passwordRules.isLongEnough ? 'text-green-500' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${passwordRules.isLongEnough ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  At least 6 characters
+                </div>
+              </div>
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted mb-1">Confirm Password</label>
@@ -157,6 +196,11 @@ const Register = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
+              {formData.confirmPassword && (
+                <div className={`text-xs mt-1 ${formData.password === formData.confirmPassword ? 'text-green-500' : 'text-red-500'}`}>
+                  {formData.password === formData.confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                </div>
+              )}
             </div>
           </div>
           <motion.button
