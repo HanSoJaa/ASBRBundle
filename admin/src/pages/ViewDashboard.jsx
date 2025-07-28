@@ -19,6 +19,30 @@ const monthAgoStr = () => {
   return d.toISOString().slice(0, 10);
 };
 
+// Helper function to format date range display
+const getDateRangeDisplay = (timeFilter) => {
+  const today = new Date();
+  switch(timeFilter) {
+    case 'today':
+      return today.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    case 'week':
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return `${weekAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    case 'month':
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return `${monthAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    default:
+      return today.toLocaleDateString();
+  }
+};
+
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -35,7 +59,7 @@ const ViewDashboard = () => {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeFilter, setTimeFilter] = useState('week');
+  const [timeFilter, setTimeFilter] = useState('today');
   const [brandsLimit, setBrandsLimit] = useState(5);
 
   useEffect(() => {
@@ -57,12 +81,13 @@ const ViewDashboard = () => {
             startDate = monthAgoStr();
             break;
           default:
-            startDate = weekAgoStr();
+            startDate = todayStr();
         }
 
-        // Fetch all dashboard data
+        // Fetch all dashboard data with time filter
         const responses = await Promise.all([
-          axios.get(`${backendUrl}/api/dashboard/summary/today`, {
+          axios.get(`${backendUrl}/api/dashboard/summary`, {
+            params: { start: startDate, end: endDate },
             headers: { Authorization: `Bearer ${token}` }
           }),
           axios.get(`${backendUrl}/api/dashboard/sales/performance`, {
@@ -78,6 +103,7 @@ const ViewDashboard = () => {
             headers: { Authorization: `Bearer ${token}` }
           }),
           axios.get(`${backendUrl}/api/dashboard/orders/status-distribution`, {
+            params: { start: startDate, end: endDate },
             headers: { Authorization: `Bearer ${token}` }
           }),
           axios.get(`${backendUrl}/api/dashboard/payment-methods`, {
@@ -88,25 +114,26 @@ const ViewDashboard = () => {
 
         // Update state with all data
         setDashboardData({
-          totalSales: responses[0].data.totalSales,
-          totalOrders: responses[0].data.totalOrders,
-          salesPerf: responses[1].data.sales.map(s => ({ 
+          totalSales: responses[0].data.totalSales || 0,
+          totalOrders: responses[0].data.totalOrders || 0,
+          salesPerf: responses[1].data.sales?.map(s => ({ 
             date: s._id, 
             total: s.total 
-          })),
-          ordersPerf: responses[2].data.orders.map(o => ({ 
+          })) || [],
+          ordersPerf: responses[2].data.orders?.map(o => ({ 
             date: o._id, 
             count: o.count 
-          })),
-          brands: responses[3].data.brands.map(b => ({ 
+          })) || [],
+          brands: responses[3].data.brands?.map(b => ({ 
             brand: b.name, 
             totalSold: b.value 
-          })),
-          statusDistribution: responses[4].data.statuses,
-          paymentMethods: responses[5].data.methods
+          })) || [],
+          statusDistribution: responses[4].data.statuses || [],
+          paymentMethods: responses[5].data.methods || []
         });
 
       } catch (err) {
+        console.error('Dashboard data fetch error:', err);
         setError(err.response?.data?.error || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -164,9 +191,14 @@ const ViewDashboard = () => {
             <span className="text-blue-600 text-2xl">💰</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-600">Total Sales (Today)</h2>
+            <h2 className="text-lg font-semibold text-gray-600">
+              Total Sales ({timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)})
+            </h2>
             <div className="text-2xl font-bold text-gray-800">
               RM{dashboardData.totalSales.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {getDateRangeDisplay(timeFilter)}
             </div>
           </div>
         </div>
@@ -176,9 +208,14 @@ const ViewDashboard = () => {
             <span className="text-green-600 text-2xl">📦</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-600">Total Orders (Today)</h2>
+            <h2 className="text-lg font-semibold text-gray-600">
+              Total Orders ({timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)})
+            </h2>
             <div className="text-2xl font-bold text-gray-800">
               {dashboardData.totalOrders}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {getDateRangeDisplay(timeFilter)}
             </div>
           </div>
         </div>
