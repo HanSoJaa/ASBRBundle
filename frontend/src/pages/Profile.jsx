@@ -70,9 +70,9 @@ const Profile = () => {
                         profilePicture: null,
                         password: ''
                     });
-                    
+                    // Use direct URL if it's a Cloudinary link
                     if (userDetails.profilePicture) {
-                        setPreviewUrl(`${backendUrl}/${userDetails.profilePicture}`);
+                        setPreviewUrl(userDetails.profilePicture);
                     }
                 } else {
                     toast.error(response.data.message || 'Failed to fetch user details');
@@ -198,10 +198,9 @@ const Profile = () => {
                 localStorage.setItem('user', JSON.stringify(updatedUserData));
                 // Clear password field after successful update
                 setFormData(prev => ({ ...prev, password: '' }));
-                
                 // Update preview URL if profile picture was updated
                 if (response.data.user.profilePicture) {
-                    setPreviewUrl(`${backendUrl}/${response.data.user.profilePicture}`);
+                    setPreviewUrl(response.data.user.profilePicture);
                 }
             } else {
                 toast.error(response.data.message || 'Failed to update profile');
