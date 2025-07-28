@@ -129,11 +129,20 @@ const updateOrderDetails = async (req, res) => {
     try {
         const { orderID } = req.params;
         const { name, phoneNum, address } = req.body;
+        
+        // Validate required fields
+        if (!name || !phoneNum || !address) {
+            return res.status(400).json({ success: false, message: "Name, phone number, and address are required" });
+        }
+        
         const order = await orderModel.findOne({ orderID });
         if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-        if (order.status !== 'processing') {
-            return res.status(400).json({ success: false, message: "Only processing orders can be updated" });
+        
+        // Only allow updates for pending orders
+        if (order.status !== 'pending') {
+            return res.status(400).json({ success: false, message: "Only pending orders can be updated" });
         }
+        
         order.name = name;
         order.phoneNum = phoneNum;
         order.address = address;
