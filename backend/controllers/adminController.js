@@ -2,6 +2,7 @@ import validator from "validator";
 import jwt from "jsonwebtoken"
 import adminModel from "../models/adminModel.js";
 import 'dotenv/config'
+import {v2 as cloudinary} from "cloudinary"
 
 // Password validation function
 const validatePassword = (password) => {
@@ -97,6 +98,20 @@ const generateSequentialId = async (role) => {
         console.error('Error generating sequential ID:', error);
         throw error;
     }
+};
+
+// Helper for uploading buffer to Cloudinary
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
 };
 
 // Add new admin (only owner can do this)
@@ -268,7 +283,14 @@ const updateAdminProfile = async (req, res) => {
             }
             
             if (req.file) {
-                admin.profilePicture = req.file.path;
+                // Upload profile picture to Cloudinary
+                try {
+                  const result = await uploadToCloudinary(req.file.buffer);
+                  admin.profilePicture = result.secure_url;
+                } catch (error) {
+                  console.error('Error uploading profile picture to cloudinary:', error);
+                  return res.json({ success: false, message: 'Failed to upload profile picture' });
+                }
             }
 
             await admin.save();
@@ -373,7 +395,14 @@ const updateOwnerProfile = async (req, res) => {
             if (email) owner.email = email;
             if (address) owner.address = address;
             if (req.file) {
-                owner.profilePicture = req.file.path;
+                // Upload profile picture to Cloudinary
+                try {
+                  const result = await uploadToCloudinary(req.file.buffer);
+                  owner.profilePicture = result.secure_url;
+                } catch (error) {
+                  console.error('Error uploading profile picture to cloudinary:', error);
+                  return res.json({ success: false, message: 'Failed to upload profile picture' });
+                }
             }
 
             await owner.save();

@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../App';
 import { toast } from 'react-toastify';
 
+const BRAND_OPTIONS = ["Adidas", "Nike", "Puma", "New Balance", "Asics"];
+const SHOES_TYPE_OPTIONS = ["Running", "Lifestyle", "Football", "Badminton"];
+
 const List = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
@@ -16,6 +19,10 @@ const List = () => {
         minPrice: '',
         maxPrice: ''
     });
+    const [search, setSearch] = useState("");
+    const [searchTrigger, setSearchTrigger] = useState(false);
+    const [minPriceInput, setMinPriceInput] = useState("");
+    const [maxPriceInput, setMaxPriceInput] = useState("");
 
     // Get token from localStorage
     const token = localStorage.getItem('token');
@@ -39,9 +46,15 @@ const List = () => {
             });
 
             const response = await axios.get(`${backendUrl}/api/product/list?${queryParams.toString()}`);
-            if (response.data.success) {
-                setProducts(response.data.products);
+            let fetchedProducts = response.data.success ? response.data.products : [];
+            // Apply search filter (client-side)
+            if (search) {
+                const s = search.toLowerCase();
+                fetchedProducts = fetchedProducts.filter(
+                  p => p.productID.toLowerCase().includes(s) || p.name.toLowerCase().includes(s)
+                );
             }
+            setProducts(fetchedProducts);
         } catch (error) {
             setError(error.response?.data?.message || 'Error fetching products');
         } finally {
@@ -51,7 +64,10 @@ const List = () => {
 
     useEffect(() => {
         fetchProducts();
-    }, [filters]);
+        setMinPriceInput(filters.minPrice);
+        setMaxPriceInput(filters.maxPrice);
+        // eslint-disable-next-line
+    }, [filters, searchTrigger]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -59,6 +75,24 @@ const List = () => {
             ...prev,
             [name]: value
         }));
+    };
+
+    const handlePriceInput = (e, type) => {
+        const value = e.target.value;
+        if (type === 'min') setMinPriceInput(value);
+        else setMaxPriceInput(value);
+    };
+    const handlePriceCommit = (type) => {
+        setFilters(prev => ({
+            ...prev,
+            minPrice: minPriceInput,
+            maxPrice: maxPriceInput
+        }));
+    };
+    const handlePriceKeyDown = (e, type) => {
+        if (e.key === 'Enter') {
+            handlePriceCommit(type);
+        }
     };
 
     const handleDelete = async (productID) => {
@@ -95,7 +129,22 @@ const List = () => {
         <div className="p-4">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold mb-4">Product List</h1>
-                
+                {/* Search Bar */}
+                <div className="flex gap-2 mb-4">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search by Product ID or Name"
+                        className="p-2 border rounded w-full max-w-xs"
+                    />
+                    <button
+                        onClick={() => setSearchTrigger(t => !t)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    >
+                        Search
+                    </button>
+                </div>
                 {/* Filters */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                     <select
@@ -110,39 +159,45 @@ const List = () => {
                         <option value="unisex">Unisex</option>
                         <option value="kids">Kids</option>
                     </select>
-
-                    <input
-                        type="text"
+                    <select
                         name="brand"
                         value={filters.brand}
                         onChange={handleFilterChange}
-                        placeholder="Filter by brand"
                         className="p-2 border rounded"
-                    />
-
-                    <input
-                        type="text"
+                    >
+                        <option value="">All Brands</option>
+                        {BRAND_OPTIONS.map(b => (
+                            <option key={b} value={b}>{b}</option>
+                        ))}
+                    </select>
+                    <select
                         name="shoesType"
                         value={filters.shoesType}
                         onChange={handleFilterChange}
-                        placeholder="Filter by type"
                         className="p-2 border rounded"
-                    />
-
+                    >
+                        <option value="">All Types</option>
+                        {SHOES_TYPE_OPTIONS.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                        ))}
+                    </select>
                     <input
                         type="number"
                         name="minPrice"
-                        value={filters.minPrice}
-                        onChange={handleFilterChange}
+                        value={minPriceInput}
+                        onChange={e => handlePriceInput(e, 'min')}
+                        onBlur={() => handlePriceCommit('min')}
+                        onKeyDown={e => handlePriceKeyDown(e, 'min')}
                         placeholder="Min price"
                         className="p-2 border rounded"
                     />
-
                     <input
                         type="number"
                         name="maxPrice"
-                        value={filters.maxPrice}
-                        onChange={handleFilterChange}
+                        value={maxPriceInput}
+                        onChange={e => handlePriceInput(e, 'max')}
+                        onBlur={() => handlePriceCommit('max')}
+                        onKeyDown={e => handlePriceKeyDown(e, 'max')}
                         placeholder="Max price"
                         className="p-2 border rounded"
                     />

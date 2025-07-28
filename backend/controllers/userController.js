@@ -4,6 +4,7 @@ import userModel from "../models/userModel.js";
 import resetPinModel from "../models/resetPinModel.js";
 import { sendWelcomeEmail, sendPasswordReset } from "../services/emailService.js";
 import 'dotenv/config'
+import {v2 as cloudinary} from "cloudinary"
 
 // Helper function to generate sequential userID
 const generateSequentialUserID = async () => {
@@ -340,7 +341,14 @@ const updateUserProfile = async (req, res) => {
             }
 
             if (req.file) {
-                user.profilePicture = req.file.path;
+                // Upload profile picture to Cloudinary
+                try {
+                  const result = await uploadToCloudinary(req.file.buffer);
+                  user.profilePicture = result.secure_url;
+                } catch (error) {
+                  console.error('Error uploading profile picture to cloudinary:', error);
+                  return res.status(500).json({ success: false, message: 'Failed to upload profile picture' });
+                }
             }
 
             await user.save();
@@ -367,6 +375,20 @@ const updateUserProfile = async (req, res) => {
             message: error.message || "Internal server error" 
         });
     }
+};
+
+// Helper for uploading buffer to Cloudinary
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
 };
 
 // Forgot Password - Request Reset
