@@ -45,7 +45,8 @@ const OwnerProfile = ({ token, adminData }) => {
                         profilePicture: null,
                         password: ownerData.password || ''
                     });
-                    setPreviewUrl(ownerData.profilePicture ? `${backendUrl}/${ownerData.profilePicture}` : null);
+                    // Use direct URL if it's a Cloudinary link
+                    setPreviewUrl(ownerData.profilePicture || null);
                 } else {
                     toast.error('Failed to fetch owner details');
                 }
@@ -147,8 +148,10 @@ const OwnerProfile = ({ token, adminData }) => {
                 // Update local storage with new admin data
                 const updatedAdminData = { ...adminData, ...response.data.admin };
                 localStorage.setItem('adminData', JSON.stringify(updatedAdminData));
-                ;
-
+                // Update preview URL if profile picture was updated
+                if (response.data.admin.profilePicture) {
+                    setPreviewUrl(response.data.admin.profilePicture);
+                }
             } else {
                 toast.error(response.data.message || 'Failed to update profile');
             }
