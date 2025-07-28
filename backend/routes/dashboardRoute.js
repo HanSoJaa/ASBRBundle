@@ -1,5 +1,6 @@
 import express from 'express';
 import { 
+  getSummary,
   getTodaySummary,
   getSalesPerformance,
   getOrderPerformance,
@@ -9,6 +10,9 @@ import {
 } from '../controllers/dashboardController.js';
 
 const router = express.Router();
+
+// Summary with date range parameters
+router.get('/summary', getSummary);
 
 // Today's summary
 router.get('/summary/today', getTodaySummary);

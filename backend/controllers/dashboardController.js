@@ -1,6 +1,31 @@
 import orderModel from '../models/orderModel.js';
 import productModel from '../models/productModel.js';
 
+// Get summary with date range parameters
+export const getSummary = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    endDate.setDate(endDate.getDate() + 1); // Include the end date
+    
+    const [sales, orders] = await Promise.all([
+      orderModel.aggregate([
+        { $match: { date: { $gte: startDate, $lt: endDate }, status: { $ne: 'cancelled' } } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+      ]),
+      orderModel.countDocuments({ date: { $gte: startDate, $lt: endDate }, status: { $ne: 'cancelled' } })
+    ]);
+    
+    res.json({ 
+      totalSales: sales[0]?.total || 0,
+      totalOrders: orders
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get today's summary
 export const getTodaySummary = async (req, res) => {
   try {
