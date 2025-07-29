@@ -214,8 +214,8 @@ const getAllAdmins = async (req, res) => {
 const updateAdminProfile = async (req, res) => {
     try {
         const { id } = req.params;
-        const isOwnerRoute = req.originalUrl.includes('/admin/');
-        const isAdminSelfRoute = req.originalUrl.includes('/adminProfile/');
+        const isAdminSelfRoute = req.originalUrl.includes('/profile/');
+        const isOwnerRoute = req.originalUrl.includes('/admin/') && !isAdminSelfRoute;
 
         // Debug logging
         console.log('updateAdminProfile called with:', {
