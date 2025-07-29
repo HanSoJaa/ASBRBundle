@@ -155,6 +155,18 @@ const addAdmin = async (req, res) => {
         // Generate sequential adminID based on role
         const adminID = await generateSequentialId(role || 'admin');
 
+        // Handle profile picture upload to Cloudinary
+        let profilePictureUrl = '';
+        if (req.file) {
+            try {
+                const result = await uploadToCloudinary(req.file.buffer);
+                profilePictureUrl = result.secure_url;
+            } catch (error) {
+                console.error('Error uploading profile picture to cloudinary:', error);
+                return res.status(500).json({ success: false, message: 'Failed to upload profile picture' });
+            }
+        }
+
         const newAdmin = new adminModel({
             adminID,
             name,
@@ -163,7 +175,7 @@ const addAdmin = async (req, res) => {
             password,
             role: role || 'admin',
             address,
-            profilePicture: req.file?.path || ''
+            profilePicture: profilePictureUrl
         });
 
         const admin = await newAdmin.save();
