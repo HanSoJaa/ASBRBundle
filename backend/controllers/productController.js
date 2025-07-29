@@ -254,10 +254,7 @@ const updateProduct = async (req, res) => {
       const field = imageFields[i];
       if (req.files && req.files[field] && req.files[field][0]) {
         try {
-          const result = await cloudinary.uploader.upload(
-            req.files[field][0].path, 
-            { resource_type: 'image' }
-          );
+          const result = await uploadToCloudinary(req.files[field][0].buffer);
           // Replace existing image at position or add new
           if (i < updatedImages.length) {
             updatedImages[i] = result.secure_url;
@@ -265,7 +262,8 @@ const updateProduct = async (req, res) => {
             updatedImages.push(result.secure_url);
           }
         } catch (error) {
-          console.error('Error uploading image:', error);
+          console.error('Error uploading image to cloudinary:', error);
+          return res.status(500).json({ success: false, message: 'Failed to upload image' });
         }
       }
     }
@@ -280,8 +278,9 @@ const updateProduct = async (req, res) => {
 
 
 // Add this helper function to ProductController.js
-function computeCosineSimilarity(vecA, vecB) {
-    if (vecA.length !== vecB.length) {
+function computeCosineSimilarity(vecA, vecB) { //vecA: the user profile (most preferred brand, type, gender, size)
+                                               //vecB: a product to compare
+    if (vecA.length !== vecB.length) { 
         return 0;
     }
     let dotProduct = 0;
@@ -299,16 +298,19 @@ function computeCosineSimilarity(vecA, vecB) {
     }
     return dotProduct / (magnitudeA * magnitudeB);
 }
+//1	         | Perfectly similar (they're the same vector)
+//Close to 1 | Very similar
+//0	         | Completely different (orthogonal)
 
 
-/// array product to compute consine similarity
+// array product to compute consine similarity
 const BRANDS = ["Adidas", "Nike", "New Balance", "Puma", "Asics"];
 const SHOES_TYPES = ["Running", "Lifestyle", "Football", "Badminton"];
 const GENDERS = ['men', 'women', 'unisex'];
 const SIZES = [3,4,5,6,7,8,9,10,11,12];
 
 // Helper: one-hot encode a product
-function encodeProduct(product) {
+function encodeProduct(product) { //Converts a product into a feature vector
     const brandVec = BRANDS.map(b => (product.brand === b ? 1 : 0));
     const shoesTypeVec = SHOES_TYPES.map(t => (product.shoesType === t ? 1 : 0));
     const genderVec = GENDERS.map(g => (product.gender === g ? 1 : 0));
