@@ -217,12 +217,33 @@ const updateAdminProfile = async (req, res) => {
         const isOwnerRoute = req.originalUrl.includes('/admin/');
         const isAdminSelfRoute = req.originalUrl.includes('/adminProfile/');
 
+        // Debug logging
+        console.log('updateAdminProfile called with:', {
+            id,
+            originalUrl: req.originalUrl,
+            method: req.method,
+            isOwnerRoute,
+            isAdminSelfRoute
+        });
+
+        // Validate id parameter
+        if (!id) {
+            return res.status(400).json({ success: false, message: "ID parameter is required" });
+        }
+
         // Handle GET request
         if (req.method === 'GET') {
             let admin;
             
             if (isOwnerRoute) {
                 // Owner route: find by _id (can update any admin)
+                // Validate if id is a valid ObjectId
+                if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: "Invalid admin ID format. Expected MongoDB ObjectId." 
+                    });
+                }
                 admin = await adminModel.findById(id);
             } else if (isAdminSelfRoute) {
                 // Admin self-edit route: find by adminID and role 'admin'
@@ -242,6 +263,13 @@ const updateAdminProfile = async (req, res) => {
             
             if (isOwnerRoute) {
                 // Owner route: find by _id (can update any admin)
+                // Validate if id is a valid ObjectId
+                if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: "Invalid admin ID format. Expected MongoDB ObjectId." 
+                    });
+                }
                 admin = await adminModel.findById(id);
             } else if (isAdminSelfRoute) {
                 // Admin self-edit route: find by adminID and role 'admin'
